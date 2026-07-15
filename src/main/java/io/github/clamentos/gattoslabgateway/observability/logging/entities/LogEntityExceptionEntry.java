@@ -1,0 +1,23 @@
+package io.github.clamentos.gattoslabgateway.observability.logging.entities;
+
+///
+import java.util.List;
+
+///..
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+///
+@AllArgsConstructor
+@Getter
+
+///
+public final class LogEntityExceptionEntry {
+
+    ///
+    private final String className;
+    private final String message;
+    private final List<String> stacktrace;
+
+    ///
+}
