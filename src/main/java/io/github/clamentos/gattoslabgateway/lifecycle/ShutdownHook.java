@@ -16,28 +16,23 @@ import lombok.extern.slf4j.Slf4j;
 public class ShutdownHook implements Runnable {
 
     ///
-    private final List<Object> closables;
+    private final List<Closeable> closables;
 
     ///
     @Override
     public void run() {
 
         log.info("Begin shutdown...");
-        for(final Object closable : closables) this.tryClose(closable);
+        for(final Closeable closable : closables) this.tryClose(closable);
         log.info("End shutdown");
     }
 
     ///.
-    private void tryClose(final Object closeable) {
+    private void tryClose(final Closeable closeable) {
 
         try {
 
-            switch(closeable) {
-
-                case final Closeable cl -> cl.close();
-                default -> log.warn("Unknown closable class {}", closeable.getClass().getSimpleName());
-            }
-
+            closeable.close();
             log.info("Closed {}", closeable.getClass().getSimpleName());
         }
 

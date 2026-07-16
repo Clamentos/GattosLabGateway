@@ -23,6 +23,7 @@ public abstract class ApplicationProperties {
     public abstract int getServerPort();
     public abstract int getSocketQueueSize();
     public abstract String getSslKeystoreName();
+    public abstract String getDynamicPropertiesRefreshSchedule();
 
     ///
     protected <T> T resolve(final String envName, final Class<T> clazz) throws IllegalArgumentException {

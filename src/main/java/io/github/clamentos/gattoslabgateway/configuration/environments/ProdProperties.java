@@ -24,6 +24,7 @@ public final class ProdProperties extends ApplicationProperties {
     private final int serverPort;
     private final int socketQueueSize;
     private final String sslKeystoreName;
+    private final String dynamicPropertiesRefreshSchedule;
 
     ///
     public ProdProperties() {
@@ -36,6 +37,7 @@ public final class ProdProperties extends ApplicationProperties {
         serverPort = 8443;
         socketQueueSize = 0;
         sslKeystoreName = "keystore.p12";
+        dynamicPropertiesRefreshSchedule = "m1";
     }
 
     ///

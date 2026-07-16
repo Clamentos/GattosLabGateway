@@ -7,8 +7,8 @@ import io.github.clamentos.gattoslabgateway.exceptions.DatabindException;
 public interface Mapper<T> {
 
     ///
-    T deserialize(final String data) throws DatabindException;
-    String serialize(final T data) throws DatabindException;
+    public T deserialize(final String data) throws DatabindException, UnsupportedOperationException;
+    public String serialize(final T data) throws DatabindException, UnsupportedOperationException;
 
     ///
 }

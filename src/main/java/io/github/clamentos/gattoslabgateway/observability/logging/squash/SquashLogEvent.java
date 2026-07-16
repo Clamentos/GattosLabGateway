@@ -4,12 +4,12 @@ package io.github.clamentos.gattoslabgateway.observability.logging.squash;
 public interface SquashLogEvent {
 
     ///
-    SquashLogEventType getType();
+    public SquashLogEventType getType();
 
     ///..
-    void update(final Object value);
-    void log();
-    void reset();
+    public void update(final Object value);
+    public void log();
+    public void reset();
 
     ///
 }

@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public final class FileDatabase {
 
     ///
-    public <T> List<T> fetchByFilter(final EntityType entityType, final Mapper<T> mapper) throws DatabindException, IOException {
+    public <T> List<T> fetchByEntityType(final EntityType entityType, final Mapper<T> mapper) throws DatabindException, IOException {
 
         final List<Path> filesToSearch = new ArrayList<>();
 
