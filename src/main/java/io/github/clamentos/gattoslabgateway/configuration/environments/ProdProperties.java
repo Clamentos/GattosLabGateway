@@ -17,27 +17,60 @@ public final class ProdProperties extends ApplicationProperties {
 
     ///
     private final Environment currentEnvironment;
-    private final String logsSquashSchedule;
-    private final Duration batchSchedulerShutdownTimeout;
-    private final Duration serverStopTimeout;
-    private final String sslKeystorePassword;
+
+    ///..
     private final int serverPort;
     private final int socketQueueSize;
     private final String sslKeystoreName;
+    private final String sslKeystorePassword;
+    private final Duration serverStopTimeout;
+
+    ///..
+    private final Duration batchSchedulerShutdownTimeout;
+
+    ///..
     private final String dynamicPropertiesRefreshSchedule;
+    private final String dynamicPropertiesPath;
+
+    ///..
+    private final String requestMetricsFilePath;
+    private final int requestMetricsBufferSize;
+
+    ///..
+    private final String systemMetricsFilePath;
+    private final String systemMetricsPollSchedule;
+
+    ///..
+    private final String logsSquashSchedule;
+
+    ///..
+    private final String observabilitySendSchedule;
 
     ///
     public ProdProperties() {
 
-        currentEnvironment = Environment.PROD;
-        logsSquashSchedule = "m1";
-        batchSchedulerShutdownTimeout = Duration.ofSeconds(4);
-        serverStopTimeout = Duration.ofSeconds(4);
-        sslKeystorePassword = super.resolve("SSL_KEY_STORE_PASSWORD", String.class);
-        serverPort = 8443;
+        currentEnvironment = Environment.DEV;
+
+        serverPort = 443;
         socketQueueSize = 0;
         sslKeystoreName = "keystore.p12";
-        dynamicPropertiesRefreshSchedule = "m1";
+        sslKeystorePassword = super.resolve("{...}", String.class);
+        serverStopTimeout = Duration.ofSeconds(4);
+
+        batchSchedulerShutdownTimeout = Duration.ofSeconds(4);
+
+        dynamicPropertiesRefreshSchedule = "1m";
+        dynamicPropertiesPath = "./observability/dynamic_properties.conf";
+
+        requestMetricsFilePath = "./observability/request_metrics.log";
+        requestMetricsBufferSize = 8192;
+
+        systemMetricsFilePath = "./observability/system_metrics.log";
+        systemMetricsPollSchedule = "s5";
+
+        logsSquashSchedule = "m1";
+
+        observabilitySendSchedule = "m1";
     }
 
     ///

@@ -1,4 +1,4 @@
-package io.github.clamentos.gattoslabgateway.utils;
+package io.github.clamentos.gattoslabgateway.datastructures;
 
 ///
 import java.util.concurrent.atomic.AtomicLongArray;
@@ -9,7 +9,7 @@ public final class FastAtomicCounter {
     ///
     private static final int CPU_CACHE_LINE_SIZE_BYTES = 64;
 
-    ///..
+    ///.
     private final int mask;
     private final AtomicLongArray paddedCounters;
 

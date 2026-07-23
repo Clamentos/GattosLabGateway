@@ -11,11 +11,11 @@ import lombok.Getter;
 @Getter
 
 ///
-public abstract class DynamicPropertyEntity {
+public abstract class DynamicProperty {
 
     ///
     private final DynamicPropertyType type;
-    private final boolean enabled;
+    private final boolean isEnabled;
 
     ///
 }

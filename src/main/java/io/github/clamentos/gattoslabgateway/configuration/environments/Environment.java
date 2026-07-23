@@ -5,7 +5,13 @@ public enum Environment {
 
     ///
     DEV,
-    PROD
+    PROD;
+
+    ///
+    public static Environment getDefault() {
+
+        return Environment.DEV;
+    }
 
     ///
 }

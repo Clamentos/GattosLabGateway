@@ -32,7 +32,7 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 
 ///
-@Slf4j
+
 
 ///
 public final class RequestExchanger implements Closeable {

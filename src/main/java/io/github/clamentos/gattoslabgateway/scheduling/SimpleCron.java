@@ -1,6 +1,7 @@
 package io.github.clamentos.gattoslabgateway.scheduling;
 
 ///
+import io.github.clamentos.gattoslabgateway.observability.logging.Logger;
 import io.github.clamentos.gattoslabgateway.utils.GenericUtils;
 
 ///..
@@ -8,18 +9,17 @@ import java.util.Map;
 
 ///..
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-
-///
-@Slf4j
 
 ///
 public final class SimpleCron {
 
     ///
-    private static final String SOURCE_DECODE = "SimpleCron.decodePeriod";
+    private static final String PREFIX = "SimpleCron.decodePeriod :: ";
 
-    ///
+    ///.
+    private final Logger logger;
+
+    ///..
     private final Runnable task;
     private final String name;
 
@@ -28,7 +28,7 @@ public final class SimpleCron {
     private long nextTrigger;
 
     ///
-    public SimpleCron(final Runnable task, final String name, final String simpleCron) throws IllegalArgumentException {
+    public SimpleCron(final Runnable task, final String name, final String simpleCron, final Logger logger) throws IllegalArgumentException {
 
         /*
             Very simple cron scheduling (no offsets): <time-unit><amount>
@@ -42,7 +42,9 @@ public final class SimpleCron {
             scheduling uncertainty: +- 200ms (depends how fast the scheduler thread spins)
         */
 
-        period = decodePeriod(simpleCron);
+        this.logger = logger;
+
+        period = this.decodePeriod(simpleCron);
         this.task = task;
         this.name = name;
 
@@ -61,7 +63,7 @@ public final class SimpleCron {
             final Thread worker = GenericUtils.createVirtualThread("gattos-lab-gateway-batch-scheduler-worker-" + id + "-" + name, () -> {
 
                 try { task.run(); }
-                catch(final RuntimeException exc) { log.error("Uncaught exception in scheduled task {}", name, exc); }
+                catch(final RuntimeException exc) { logger.error("Uncaught exception in scheduled task '" + name + "'", exc); }
 
                 workers.remove(id);
             });
@@ -77,14 +79,14 @@ public final class SimpleCron {
     }
 
     ///.
-    public static long decodePeriod(final String simpleCron) throws IllegalArgumentException {
+    private long decodePeriod(final String simpleCron) throws IllegalArgumentException {
 
         if(simpleCron.length() >= 2) {
 
             final char unit = simpleCron.charAt(0);
 
             final long amount = Long.parseLong(simpleCron.substring(1));
-            if(amount <= 0) throw new IllegalArgumentException(SOURCE_DECODE + ":: Amount must be greater than 0");
+            if(amount <= 0) throw new IllegalArgumentException(PREFIX + "Amount must be greater than 0");
 
             switch(unit) {
 
@@ -92,13 +94,13 @@ public final class SimpleCron {
                 case 'm': return amount * 1000 * 60;
                 case 'h': return amount * 1000 * 60 * 60;
 
-                default: throw new IllegalArgumentException(SOURCE_DECODE + ":: Unknown time unit '" + unit + "'");
+                default: throw new IllegalArgumentException(PREFIX + "Unknown time unit '" + unit + "'");
             }
         }
 
         else {
 
-            throw new IllegalArgumentException(SOURCE_DECODE + ":: Malformed cron expression '" + simpleCron + "'");
+            throw new IllegalArgumentException(PREFIX + "Malformed cron expression '" + simpleCron + "'");
         }
     }
 

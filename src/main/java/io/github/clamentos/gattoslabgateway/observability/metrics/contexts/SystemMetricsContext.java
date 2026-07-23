@@ -1,6 +1,7 @@
 package io.github.clamentos.gattoslabgateway.observability.metrics.contexts;
 
 ///
+import io.github.clamentos.gattoslabgateway.observability.logging.Logger;
 import io.github.clamentos.gattoslabgateway.observability.metrics.entities.SystemMetricsEntity;
 
 ///..
@@ -20,16 +21,13 @@ import java.util.function.Consumer;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
 
-///..
-import lombok.extern.slf4j.Slf4j;
-
-///
-@Slf4j
-
 ///
 public final class SystemMetricsContext implements Closeable {
 
     ///
+    private final Logger logger;
+
+    ///..
     private final AtomicLong platformThreads;
 
     private final AtomicLong classesLoaded;
@@ -63,6 +61,8 @@ public final class SystemMetricsContext implements Closeable {
 
     ///
     public SystemMetricsContext(final long samplingPeriod) {
+
+        logger = new Logger();
 
         platformThreads = new AtomicLong();
         classesLoaded = new AtomicLong();
@@ -123,6 +123,15 @@ public final class SystemMetricsContext implements Closeable {
     }
 
     ///
+    @Override
+    public void close() throws IOException {
+
+        logger.info("Begin shutdown...");
+        recordingStream.close();
+        logger.info("End shutdown");
+    }
+
+    ///..
     public void requestStarted() {
 
         requestMetricsEquilibrium.incrementAndGet();
@@ -135,7 +144,7 @@ public final class SystemMetricsContext implements Closeable {
     }
 
     ///..
-    public SystemMetricsEntity toEntity() {
+    public SystemMetricsEntity sample() {
 
         final long sampleCounterValue = sampleCounter.get();
 
@@ -151,7 +160,7 @@ public final class SystemMetricsContext implements Closeable {
 
             catch(final IOException exc) {
 
-                log.error("Could not get filesystem usage because", exc);
+                logger.error("Could not get filesystem usage because", exc);
             }
 
             final SystemMetricsEntity entity = new SystemMetricsEntity(
@@ -195,15 +204,6 @@ public final class SystemMetricsContext implements Closeable {
         }
 
         return null;
-    }
-
-    ///..
-    @Override
-    public void close() throws IOException {
-
-        log.info("Begin shutdown...");
-        recordingStream.close();
-        log.info("End shutdown");
     }
 
     ///.

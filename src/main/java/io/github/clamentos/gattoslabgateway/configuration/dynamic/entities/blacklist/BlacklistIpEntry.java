@@ -15,7 +15,7 @@ import lombok.Getter;
 public final class BlacklistIpEntry {
 
     ///
-    private static final String SOURCE = "BlacklistIpEntry.<init>";
+    private static final String PREFIX = "BlacklistIpEntry.<init> :: ";
 
     ///
     private final byte[] start;
@@ -24,23 +24,26 @@ public final class BlacklistIpEntry {
     ///
     public BlacklistIpEntry(final String start, final String end) throws IllegalArgumentException {
 
-        if(start == null || start.isBlank()) throw new IllegalArgumentException(SOURCE + ":: Field 'start' cannot be null nor blank");
-        if(end == null || end.isBlank()) throw new IllegalArgumentException(SOURCE + ":: Field 'end' cannot be null nor blank");
+        if(start == null) throw new IllegalArgumentException(PREFIX + "Field 'start' cannot be null");
+        if(end == null) throw new IllegalArgumentException(PREFIX + "Field 'end' cannot be null");
+
+        final String trimmedStart = start.trim();
+        final String trimmedEnd = end.trim();
+
+        if(trimmedStart.isBlank()) throw new IllegalArgumentException(PREFIX + "Field 'start' cannot be blank");
+        if(trimmedEnd.isBlank()) throw new IllegalArgumentException(PREFIX + "Field 'end' cannot be blank");
 
         try {
 
-            this.start = InetAddress.ofLiteral(start).getAddress();
-            this.end = InetAddress.ofLiteral(end).getAddress();
+            this.start = InetAddress.ofLiteral(trimmedStart).getAddress();
+            this.end = InetAddress.ofLiteral(trimmedEnd).getAddress();
         }
 
         catch(final IllegalArgumentException exc) {
 
-            throw new IllegalArgumentException(SOURCE + ":: Could not instantiate because", exc);
+            throw new IllegalArgumentException(PREFIX + "Could not instantiate because", exc);
         }
     }
-
-    ///
-    // {"start": "<ipv4 / ipv6>", "end": "<ipv4 / ipv6>"}
 
     ///
 }

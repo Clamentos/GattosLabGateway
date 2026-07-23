@@ -1,44 +1,51 @@
 package io.github.clamentos.gattoslabgateway.lifecycle;
 
 ///
-import java.io.Closeable;
-import java.util.List;
+import io.github.clamentos.gattoslabgateway.observability.logging.Logger;
 
 ///..
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
-///
-@AllArgsConstructor
-@Slf4j
+import java.io.Closeable;
+import java.util.Collection;
 
 ///
 public class ShutdownHook implements Runnable {
 
     ///
-    private final List<Closeable> closables;
+    private final Logger logger;
+
+    ///..
+    private final Collection<Closeable> closables;
+
+    ///
+    public ShutdownHook(final Collection<Closeable> closables) {
+
+        logger = new Logger();
+        this.closables = closables;
+    }
 
     ///
     @Override
     public void run() {
 
-        log.info("Begin shutdown...");
+        logger.info("Begin shutdown...");
         for(final Closeable closable : closables) this.tryClose(closable);
-        log.info("End shutdown");
+        logger.info("End shutdown");
     }
 
     ///.
     private void tryClose(final Closeable closeable) {
 
+        final String closeableClassName = closeable.getClass().getSimpleName();
+
         try {
 
             closeable.close();
-            log.info("Closed {}", closeable.getClass().getSimpleName());
+            logger.info("Closed '" + closeableClassName + "'");
         }
 
         catch(final Exception exc) {
 
-            log.error("Could not close {} because", closeable.getClass().getSimpleName(), exc);
+            logger.error("Could not close '" + closeableClassName + "' because", exc);
         }
     }
 

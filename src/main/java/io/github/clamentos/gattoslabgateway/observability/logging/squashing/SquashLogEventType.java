@@ -1,4 +1,4 @@
-package io.github.clamentos.gattoslabgateway.observability.logging.squash;
+package io.github.clamentos.gattoslabgateway.observability.logging.squashing;
 
 ///
 public enum SquashLogEventType {

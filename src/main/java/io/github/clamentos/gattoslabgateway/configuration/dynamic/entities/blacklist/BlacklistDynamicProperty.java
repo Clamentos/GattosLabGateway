@@ -1,12 +1,16 @@
 package io.github.clamentos.gattoslabgateway.configuration.dynamic.entities.blacklist;
 
 ///
-import io.github.clamentos.gattoslabgateway.configuration.dynamic.entities.DynamicPropertyEntity;
+import io.github.clamentos.gattoslabgateway.configuration.Constants;
+import io.github.clamentos.gattoslabgateway.configuration.dynamic.entities.DynamicProperty;
 import io.github.clamentos.gattoslabgateway.configuration.dynamic.entities.DynamicPropertyType;
+import io.github.clamentos.gattoslabgateway.utils.GenericUtils;
 
-///
+///..
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 ///..
 import lombok.EqualsAndHashCode;
@@ -17,47 +21,71 @@ import lombok.Getter;
 @Getter
 
 ///
-public final class BlacklistDynamicProperty extends DynamicPropertyEntity {
+public final class BlacklistDynamicProperty extends DynamicProperty {
 
     ///
-    private final List<BlacklistIpEntry> ipv4s;
-    private final List<BlacklistIpEntry> ipv6s;
+    private static final String PREFIX = "BlacklistDynamicProperty.<init> :: ";
+    private static final String RANGE = "IP ranges must have 2 components";
+
+    ///.
+    private final Set<BlacklistIpEntry> ipv4s;
+    private final Set<BlacklistIpEntry> ipv6s;
     private final Set<String> userAgentContains;
 
     ///
-    public BlacklistDynamicProperty(
+    public BlacklistDynamicProperty(final List<String> components, final boolean isEnabled) throws IllegalArgumentException {
 
-        final DynamicPropertyType type,
-        final boolean enabled,
-        final List<BlacklistIpEntry> ipv4s,
-        final List<BlacklistIpEntry> ipv6s,
-        final Set<String> userAgentContains
+        // type     | en | ipv4s                          | ipv6s           | userAgentContains
+        // BLACKLIST|true|1.2.3.4-1.2.3.9, 2.3.4.5-2.3.4.8|::1-::6, ::9-::35|null, "", "bot", "robot", "crawler",
 
-    ) throws IllegalArgumentException {
+        if(components.size() != 5) throw new IllegalArgumentException(PREFIX + "Not enough components");
+        super(DynamicPropertyType.BLACKLIST, isEnabled);
 
-        super(type, enabled);
+        ipv4s = new HashSet<>();
 
-        this.ipv4s = ipv4s != null ? ipv4s : List.of();
-        this.ipv6s = ipv6s != null ? ipv6s : List.of();
+        for(final String ipv4Range : GenericUtils.fastSplit(components.get(2), Constants.DYNAMIC_PROPERTY_ARRAY_SEPARATOR)) {
 
-        if(userAgentContains != null) {
+            final List<String> range = GenericUtils.fastSplit(ipv4Range, Constants.DYNAMIC_PROPERTY_RANGE_SEPARATOR);
 
-            for(final String pattern : userAgentContains) {
-
-                if(pattern == null || pattern.isBlank()) {
-
-                    throw new IllegalArgumentException("BlacklistDynamicProperty.<init>:: Field 'userAgentContains' cannot contain null or blank elements");
-                }
-            }
-
-            this.userAgentContains = userAgentContains;
+            if(range.size() != 2) throw new IllegalArgumentException(PREFIX + RANGE);
+            ipv4s.add(new BlacklistIpEntry(range.get(0), range.get(1)));
         }
 
-        else this.userAgentContains = Set.of();
+        ipv6s = new HashSet<>();
+
+        for(final String ipv6Range : GenericUtils.fastSplit(components.get(3), Constants.DYNAMIC_PROPERTY_ARRAY_SEPARATOR)) {
+
+            final List<String> range = GenericUtils.fastSplit(ipv6Range, Constants.DYNAMIC_PROPERTY_RANGE_SEPARATOR);
+
+            if(range.size() != 2) throw new IllegalArgumentException(PREFIX + RANGE);
+            ipv6s.add(new BlacklistIpEntry(range.get(0), range.get(1)));
+        }
+
+        userAgentContains = GenericUtils
+
+            .fastSplit(components.get(4), Constants.DYNAMIC_PROPERTY_ARRAY_SEPARATOR)
+            .stream()
+            .map(this::parseUserAgentContains)
+            .collect(Collectors.toSet())
+        ;
     }
 
     ///
-    // {"type": "BLACKLIST", "enabled": true, "ipv4s": [], "ipv6s": [], "userAgentContains": []}
+    private String parseUserAgentContains(final String value) throws IllegalArgumentException {
+
+        if(value == null) return null;
+        final String trimmed = value.trim();
+
+        if(trimmed.equals("") || trimmed.isBlank()) return "";
+        if(trimmed.equals("null")) return null;
+
+        if(trimmed.charAt(0) != '"' || trimmed.charAt(trimmed.length() - 1) != '"') {
+
+            throw new IllegalArgumentException(PREFIX + "Non special elements of field \"userAgentContains\", must be quoted");
+        }
+
+        return GenericUtils.fastRemove(trimmed.substring(0, trimmed.length() - 1).substring(1), '\\');
+    }
 
     ///
 }

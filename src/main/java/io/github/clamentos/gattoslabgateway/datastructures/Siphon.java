@@ -1,7 +1,7 @@
-package io.github.clamentos.gattoslabgateway.utils;
+package io.github.clamentos.gattoslabgateway.datastructures;
 
 ///
-import io.github.clamentos.gattoslabgateway.eventbus.EventBus;
+import io.github.clamentos.gattoslabgateway.utils.VirtualThreadExecutor;
 
 ///..
 import java.util.AbstractList;
@@ -10,31 +10,34 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 ///
 public final class Siphon<T> extends AbstractList<T> {
 
     ///
-    private final EventBus eventBus;
     private final AtomicBoolean isDraining;
+    private final Consumer<List<T>> drainTask;
+    private final VirtualThreadExecutor taskLauncher;
 
     ///..
     private final AtomicReferenceArray<T> elements;
     private final AtomicInteger index;
 
     ///
-    public Siphon(final EventBus eventBus, final int capacity, final Supplier<T> supplier) {
+    public Siphon(final Consumer<List<T>> drainTask, final int capacity, final Supplier<T> supplier) {
 
-        this.eventBus = eventBus;
         isDraining = new AtomicBoolean();
+        this.drainTask = drainTask;
+        taskLauncher = new VirtualThreadExecutor("siphon-drain-task-");
 
         @SuppressWarnings("unchecked")
         final T[] entities = (T[])new Object[capacity];
 
         for(int i = 0; i < capacity; i++) entities[i] = supplier.get();
-
         this.elements = new AtomicReferenceArray<>(entities);
+
         index = new AtomicInteger();
     }
 
@@ -44,7 +47,7 @@ public final class Siphon<T> extends AbstractList<T> {
         final int indexValue = index.getAndUpdate(val -> val < elements.length() ? val + 1 : val);
 
         if(indexValue < elements.length()) return elements.get(indexValue);
-        if(isDraining.compareAndSet(false, true)) eventBus.trigger();
+        if(isDraining.compareAndSet(false, true)) taskLauncher.execute(() -> drainTask.accept(this));
 
         return null;
     }
@@ -52,8 +55,8 @@ public final class Siphon<T> extends AbstractList<T> {
     ///..
     public List<T> drain() {
 
-        isDraining.set(true);
-        return this;
+        if(isDraining.compareAndSet(false, true)) return this;
+        return List.of();
     }
 
     ///..

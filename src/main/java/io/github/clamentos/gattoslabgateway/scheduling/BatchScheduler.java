@@ -2,6 +2,8 @@ package io.github.clamentos.gattoslabgateway.scheduling;
 
 ///
 import io.github.clamentos.gattoslabgateway.configuration.ApplicationProperties;
+import io.github.clamentos.gattoslabgateway.configuration.Constants;
+import io.github.clamentos.gattoslabgateway.observability.logging.Logger;
 import io.github.clamentos.gattoslabgateway.utils.GenericUtils;
 
 ///..
@@ -11,17 +13,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-///..
-import lombok.extern.slf4j.Slf4j;
-
-///
-@Slf4j
+import java.util.concurrent.atomic.AtomicBoolean;
 
 ///
 public final class BatchScheduler implements Closeable {
 
     ///
+    private final Logger logger;
+    private final Logger cronLogger;
+
+    ///..
     private final Duration shutdownTimeout;
 
     ///..
@@ -32,10 +33,13 @@ public final class BatchScheduler implements Closeable {
     private final Map<Long, Thread> workers;
 
     ///..
-    private volatile boolean halt = false;
+    private final AtomicBoolean halt;
 
     ///
     public BatchScheduler(final ApplicationProperties applicationProperties) {
+
+        logger = new Logger();
+        cronLogger = new Logger(SimpleCron.class.getSimpleName());
 
         shutdownTimeout = applicationProperties.getBatchSchedulerShutdownTimeout();
 
@@ -43,37 +47,39 @@ public final class BatchScheduler implements Closeable {
         scheduler = GenericUtils.spawnVirtualThread("gattos-lab-gateway-batch-scheduler", this::triggerJobs);
 
         workers = new ConcurrentHashMap<>();
+
+        halt = new AtomicBoolean();
     }
 
     ///
-    public long schedule(final Runnable task, final String name, final String simpleCron) throws IllegalArgumentException {
-
-        final SimpleCron cron = new SimpleCron(task, name, simpleCron);
-        jobs.add(cron);
-
-        log.info("Scheduled task: {}, period: {}ms", name, cron.getPeriod());
-        return cron.getPeriod();
-    }
-
-    ///..
     @Override
     public void close() {
 
-        log.info("Begin shutdown...");
+        logger.info("Begin shutdown...");
 
         try {
 
-            halt = true;
-            if(!scheduler.join(shutdownTimeout.multipliedBy(Math.max(workers.size(), 1)))) log.warn("Timed-out while joining");
+            halt.set(true);
+            if(!scheduler.join(shutdownTimeout.multipliedBy(Math.max(workers.size(), 1)))) logger.warn("Timed-out while joining");
         }
 
         catch(final InterruptedException _) {
 
-            log.error("Interrupted wile joining, force quitting");
+            logger.error("Interrupted wile joining, force quitting");
             Thread.currentThread().interrupt();
         }
 
-        log.info("End shutdown");
+        logger.info("End shutdown");
+    }
+
+    ///..
+    public long schedule(final Runnable task, final String name, final String simpleCron) throws IllegalArgumentException {
+
+        final SimpleCron cron = new SimpleCron(task, name, simpleCron, cronLogger);
+        jobs.add(cron);
+
+        logger.info("Scheduled task '" + name + "'', period: " + cron.getPeriod() + "ms");
+        return cron.getPeriod();
     }
 
     ///.
@@ -81,27 +87,27 @@ public final class BatchScheduler implements Closeable {
 
         final long[] idRef = new long[]{0};
 
-        while(!halt) {
+        while(!halt.get()) {
 
             final long now = System.currentTimeMillis();
             for(final SimpleCron job : jobs) job.trigger(now, idRef, workers);
 
-            GenericUtils.silentSleep(200L);
+            GenericUtils.silentSleep(Constants.BATCH_SCHEDULER_SLEEP);
         }
 
-        log.info("Exiting, joining {} workers", workers.size());
+        logger.info("Exiting, joining " + workers.size() + " workers");
 
         for(final Thread worker : workers.values()) {
 
             try {
 
-                log.info("Joining {}", worker.getName());
-                if(!worker.join(shutdownTimeout)) log.warn("Timed-out while joining {}", worker.getName());
+                logger.info("Joining '" + worker.getName() + "'");
+                if(!worker.join(shutdownTimeout)) logger.warn("Timed-out while joining '" + worker.getName() + "'");
             }
 
             catch(final InterruptedException _) {
 
-                log.error("Interrupted wile joining, force quitting");
+                logger.error("Interrupted wile joining, force quitting");
                 Thread.currentThread().interrupt();
 
                 break;

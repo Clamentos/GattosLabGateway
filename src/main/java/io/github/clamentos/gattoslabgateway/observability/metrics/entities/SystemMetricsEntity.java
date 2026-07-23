@@ -3,12 +3,10 @@ package io.github.clamentos.gattoslabgateway.observability.metrics.entities;
 ///
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 ///
 @AllArgsConstructor
 @Getter
-@Slf4j
 
 ///
 public final class SystemMetricsEntity {

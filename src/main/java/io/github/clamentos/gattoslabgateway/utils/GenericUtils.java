@@ -1,18 +1,21 @@
 package io.github.clamentos.gattoslabgateway.utils;
 
 ///
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
 ///..
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 ///
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@Slf4j
 
 ///
 public final class GenericUtils {
@@ -35,8 +38,6 @@ public final class GenericUtils {
         catch(final InterruptedException _) {
 
             Thread.currentThread().interrupt();
-            Thread.interrupted();
-
             return true;
         }
     }
@@ -83,6 +84,23 @@ public final class GenericUtils {
     }
 
     ///..
+    public static String fastRemove(final String input, final char toRemove) {
+
+        final int length = input.length();
+        final StringBuilder stringBuilder = new StringBuilder(length);
+
+        char currentChar = 0;
+
+        for(int i = 0; i < length; i++) {
+
+            currentChar = input.charAt(i);
+            if(currentChar != toRemove) stringBuilder.append(currentChar);
+        }
+
+        return stringBuilder.toString();
+    }
+
+    ///..
     public static String fastReplace(final String input, final char toReplace, final char replacement) {
 
         final int length = input.length();
@@ -97,6 +115,20 @@ public final class GenericUtils {
         }
 
         return stringBuilder.toString();
+    }
+
+    ///..
+    public static BufferedWriter openFileAsAppend(final Path path) throws IOException {
+
+        createParentDirectories(path);
+        return Files.newBufferedWriter(path, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+    }
+
+    ///..
+    private static void createParentDirectories(final Path path) throws IOException {
+
+        final Path parent = path.getParent();
+        if(parent != null) Files.createDirectories(parent);
     }
 
     ///
